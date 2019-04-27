@@ -9,10 +9,9 @@ struct hash_iter;
 // tipo de función para destruir dato
 typedef void (*hash_destruir_dato_t)(void *);
 
-/******************************************************/
-//       PRIMITIVAS HASH                              //
-//                                                    //
-/******************************************************/
+/* *****************************************************************
+ *                    PRIMITIVAS DE LA LISTA
+ * *****************************************************************/
 hash_t *hash_crear(hash_destruir_dato_t destruir_dato);
 
 
@@ -33,10 +32,9 @@ size_t hash_cantidad(const hash_t *hash);
 
 void hash_destruir(hash_t *hash);
 
-/******************************************************/
-//       PRIMITIVAS ITERADOR                          //
-//                                                    //
-/******************************************************/
+/* *****************************************************************
+ *                     PRIMITIVAS DEL ITERADOR
+ * *****************************************************************/
 
 // Crea iterador
 hash_iter_t *hash_iter_crear(const hash_t *hash);
