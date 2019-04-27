@@ -1,12 +1,27 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-// Los structs deben llamarse "hash" y "hash_iter".
-struct hash;
+/* Definición del struct nodo_hash. */
 
-struct hash_iter;
+typedef struct nodo_hash{
+	char* clave;
+	void* dato;
+	int estado;
+} nodo_hash_t;
 
-// tipo de función para destruir dato
+/* Definición del struct hash. */
+
+struct hash{
+
+};
+
+/* Definición del struct hash_iter. */
+
+struct hash_iter{
+
+};
+
+/* Tipo de función para destruir dato. */
 typedef void (*hash_destruir_dato_t)(void *);
 
 /* *****************************************************************
