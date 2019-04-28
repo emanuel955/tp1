@@ -1,3 +1,7 @@
+#define TAM_INICIAL 101 //número primo.
+#define PIVOTE1 378551
+#define PIVOTE2 63689
+
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -44,12 +48,9 @@ Por otra parte, date cuenta que solo hace falta actualizarlo en insertar, al pas
 */
 typedef void (*hash_destruir_dato_t)(void *);
 
-/******************************************************************************
-* 							FUNCIONES										  *
-******************************************************************************/
-#define TAM_INICIAL 101 //número primo.
-#define PIVOTE1 378551
-#define PIVOTE2 63689
+/* *****************************************************************
+ *                  	  FUNCION DE HASHING
+ * *****************************************************************/
 
 //devuelve una posicion en el arreglo;
 size_t hashing(size_t capacidad, const char *clave){
