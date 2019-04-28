@@ -68,7 +68,9 @@ size_t hash_cantidad(const hash_t *hash);
  */
 void hash_destruir(hash_t *hash);
 
-/* Iterador del hash */
+/* *****************************************************************
+ *                     PRIMITIVAS DEL ITERADOR
+ * *****************************************************************/
 
 // Crea iterador
 hash_iter_t *hash_iter_crear(const hash_t *hash);
