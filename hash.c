@@ -22,7 +22,9 @@ struct hash{
 /* Definición del struct hash_iter. */
 
 struct hash_iter{
-
+	hash_t* hash;
+	nodo_hash_t* ant;
+	nodo_hash_t* act;
 };
 
 /* Tipo de función para destruir dato. */
