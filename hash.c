@@ -1,4 +1,4 @@
-#define TAM_INICIAL 101 // Numero primo.
+#define TAM_MIN 101 // Numero primo.
 #define PIVOTE1 378551
 #define PIVOTE2 63689
 
@@ -16,10 +16,9 @@ typedef struct nodo_hash{
 /* Definición del struct hash. */
 
 struct hash{
-	size_t cantidad;
-	size_t largo;
-	size_t carga;
-	nodo_hash_t* tabla;
+	nodo_hash_t* tabla;	//	Arreglo conformado por nodos de hash.
+	size_t cantidad;		//	Cantidad de nodos de hash almacenados.
+	size_t capacidad;		//	Cantidad total de nodos que puede almacenar el hash.
 	hash_destruir_dato_t destruir_dato;
 };
 
@@ -60,14 +59,26 @@ size_t hashing(size_t capacidad, const char *clave){
 }
 
 /* *****************************************************************
- *                    PRIMITIVAS DE LA LISTA
+ *                   	 PRIMITIVAS DEL HASH
  * *****************************************************************/
+
 hash_t *hash_crear(hash_destruir_dato_t destruir_dato){
 	hash_t* hash = malloc(sizeof(hash_t));
 	if (!hash){
 		return NULL;
 	}
-	
+
+	hash->tabla = malloc(TAM_MIN * sizeof(nodo_hash_t));
+	if (!hash->tabla){
+		free(hash);
+		return NULL;
+	}
+
+	hash->cantidad = 0;
+	hash->capacidad = TAM_MIN;
+	hash->destruir_dato = destruir_dato;
+
+	return hash;
 }
 
 
