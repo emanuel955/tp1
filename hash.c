@@ -1,4 +1,4 @@
-#define TAM_INICIAL 101 //número primo.
+#define TAM_INICIAL 101 // Numero primo.
 #define PIVOTE1 378551
 #define PIVOTE2 63689
 
@@ -31,8 +31,6 @@ struct hash_iter{
 	nodo_hash_t* act;
 };
 
-/* Tipo de función para destruir dato. */
-
 /*
 Guardar
 Se debe guardar una copia de la clave!
@@ -46,13 +44,12 @@ carga:
 La cantidad de nodos no vacíos, esto es, en esatados ocupado o borrado. En el nodo cerrado, se usa este valor para calcular la carga, en lugar de la cantidad.
 Por otra parte, date cuenta que solo hace falta actualizarlo en insertar, al pasar un nodo de vacío a ocupado.
 */
-typedef void (*hash_destruir_dato_t)(void *);
 
 /* *****************************************************************
  *                  	  FUNCION DE HASHING
  * *****************************************************************/
 
-//devuelve una posicion en el arreglo;
+// Devuelve una posicion del hash para almacenar la pareja (clave, valor)
 size_t hashing(size_t capacidad, const char *clave){
   size_t hash = 0, pivot1 = PIVOTE1, pivot2 = PIVOTE2;
   for(int i = 0; clave[i] != '\0'; i++){
@@ -65,7 +62,13 @@ size_t hashing(size_t capacidad, const char *clave){
 /* *****************************************************************
  *                    PRIMITIVAS DE LA LISTA
  * *****************************************************************/
-hash_t *hash_crear(hash_destruir_dato_t destruir_dato);
+hash_t *hash_crear(hash_destruir_dato_t destruir_dato){
+	hash_t* hash = malloc(sizeof(hash_t));
+	if (!hash){
+		return NULL;
+	}
+	
+}
 
 
 bool hash_guardar(hash_t *hash, const char *clave, void *dato);
