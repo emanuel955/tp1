@@ -8,7 +8,7 @@
  *                DEFINICION DE LOS TIPOS DE DATOS
  * *****************************************************************/
 
-/* hash está planteado como una hash de punteros genéricos. */
+/* hash está planteado como un hash de punteros genéricos. */
 
 struct hash;	// Definición completa en hash.c.
 typedef struct hash hash_t;
