@@ -15,7 +15,7 @@ struct hash{
 	size_t cantidad;
 	size_t largo;
 	size_t carga;
-	noto_t* tabla;
+	nodo_hash_t* tabla;
 	hash_destruir_dato_t destruir_dato;
 };
 

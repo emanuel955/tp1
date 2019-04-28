@@ -4,15 +4,27 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-// Los structs deben llamarse "hash" y "hash_iter".
-struct hash;
-struct hash_iter;
+/* ******************************************************************
+ *                DEFINICION DE LOS TIPOS DE DATOS
+ * *****************************************************************/
 
+/* Hash está planteado como una hash de punteros genéricos. */
+
+struct hash;	// Definición completa en hash.c.
 typedef struct hash hash_t;
+
+/* hash_iter está planteado como un iterador del hash. */
+
+struct hash_iter;	// Definición completa en hash.c.
 typedef struct hash_iter hash_iter_t;
 
-// tipo de función para destruir dato
+/* hash_destruir_dato_t está planteado como un puntero a una funcion que destruye los datos del hash. */
+
 typedef void (*hash_destruir_dato_t)(void *);
+
+/* ******************************************************************
+ *                    	 PRIMITIVAS DEL HASH
+ * *****************************************************************/
 
 /* Crea el hash
  */
