@@ -16,10 +16,10 @@ typedef struct nodo_hash{
 /* Definición del struct hash. */
 
 struct hash{
-	nodo_hash_t* tabla;	//	Arreglo conformado por nodos de hash.
-	size_t cantidad;		//	Cantidad de nodos de hash almacenados.
-	size_t capacidad;		//	Cantidad total de nodos que puede almacenar el hash.
-	hash_destruir_dato_t destruir_dato;
+	nodo_hash_t* tabla;					//	Arreglo conformado por nodos de hash.
+	size_t cantidad;					//	Cantidad de nodos de hash almacenados.
+	size_t capacidad;					//	Cantidad total de nodos que puede almacenar el hash.
+	hash_destruir_dato_t destruir_dato;	//	Funcion para destruir los datos del hash.
 };
 
 /* Definición del struct hash_iter. */
