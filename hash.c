@@ -26,8 +26,7 @@ struct hash{
 
 struct hash_iter{
 	hash_t* hash;
-	nodo_hash_t* ant;
-	nodo_hash_t* act;
+	size_t act;
 };
 
 /*
@@ -100,22 +99,62 @@ size_t hash_cantidad(const hash_t *hash);
 void hash_destruir(hash_t *hash);
 
 /* *****************************************************************
+ *                FUNCION AUXILIAR PARA EL ITERADOR
+ * *****************************************************************/
+
+size_t posicionar_actual(const hash_t *hash, int posicion){
+	posicion++;
+
+	while(hash->tabla[posicion]->estado != DATO){	// Mientras que el estado del nodo actual de la tabla de Hash sea distinto de DATO.
+		if (posicion == hash->capacidad){			// Si la posicion es igual a la capacidad total de la tabla de Hash.
+			return hash->capacidad;
+		}
+		posicion++;
+	}
+
+	return posicion
+}
+
+/* *****************************************************************
  *                     PRIMITIVAS DEL ITERADOR
  * *****************************************************************/
 
-// Crea iterador
-hash_iter_t *hash_iter_crear(const hash_t *hash);
+hash_iter_t *hash_iter_crear(const hash_t *hash){
+	hash_iter_t* iter = malloc(sizeof(hash_iter_t));
+	if (!iter){
+		return NULL;
+	}
 
-// Avanza iterador
-bool hash_iter_avanzar(hash_iter_t *iter);
+	iter->hash = hash;
+	iter->act = posicionar_actual(iter->hash, -1)
+	return iter;
+}
 
-// Devuelve clave actual, esa clave no se puede modificar ni liberar.
-const char *hash_iter_ver_actual(const hash_iter_t *iter);
 
-// Comprueba si terminó la iteración
-bool hash_iter_al_final(const hash_iter_t *iter);
+bool hash_iter_avanzar(hash_iter_t *iter){
+	if hash_iter_al_final(iter){
+		return false;
+	}
 
-// Destruye iterador
-void hash_iter_destruir(hash_iter_t* iter);
+	iter->act == posicionar_actual(iter->hash, iter->act);
+	return true;
+}
 
-#endif // HASH_H
+
+const char *hash_iter_ver_actual(const hash_iter_t *iter){
+	if hash_iter_al_final(iter){
+		return NULL;
+	}
+
+	return iter->hash->tabla[act]->clave;
+}
+
+
+bool hash_iter_al_final(const hash_iter_t *iter){
+	return iter->act == iter->hash->capacidad;
+}
+
+
+void hash_iter_destruir(hash_iter_t* iter){
+	free(iter);
+}
