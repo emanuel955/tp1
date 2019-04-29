@@ -6,11 +6,12 @@
 #include <stddef.h>
 
 /* Definición del struct nodo_hash. */
+typedef enum{VACIO, BORRADO, DATO} estado_t;
 
 typedef struct nodo_hash{
 	char* clave;
 	void* dato;
-	int estado;
+	estado_t estado;
 } nodo_hash_t;
 
 /* Definición del struct hash. */
@@ -72,6 +73,11 @@ hash_t *hash_crear(hash_destruir_dato_t destruir_dato){
 	if (!hash->tabla){
 		free(hash);
 		return NULL;
+	}
+	for(size_t i=0; i < TAM_MIN;i++){
+		hash -> tabla[i] -> clave = NULL;
+		hash -> tabla[i] -> valor = NULL;
+		hash -> tabla[i] -> estado = VACIO;
 	}
 
 	hash->cantidad = 0;
