@@ -77,8 +77,6 @@ hash_t *hash_crear(hash_destruir_dato_t destruir_dato){
 	hash->cantidad = 0;
 	hash->capacidad = TAM_MIN;
 	hash->destruir_dato = destruir_dato;
-	
-	//LUIS	
 
 	return hash;
 }
