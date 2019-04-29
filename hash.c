@@ -15,7 +15,7 @@ typedef struct nodo_hash{
 
 /* Definición del struct hash. */
 
-struct hash{	// CCAMBIOOOO
+struct hash{
 	nodo_hash_t* tabla;					//	Arreglo conformado por nodos de hash.
 	size_t cantidad;					//	Cantidad de nodos de hash almacenados.
 	size_t capacidad;					//	Cantidad total de nodos que puede almacenar el hash.
