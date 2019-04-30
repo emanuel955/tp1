@@ -106,6 +106,7 @@ size_t posicionar_actual(const hash_t *hash, int posicion){
 	posicion++;
 
 	while(hash->tabla[posicion]->estado != DATO){	// Mientras que el estado del nodo actual de la tabla de Hash sea distinto de DATO.
+		
 		if (posicion == hash->capacidad){			// Si la posicion es igual a la capacidad total de la tabla de Hash.
 			return hash->capacidad;
 		}
@@ -146,7 +147,7 @@ const char *hash_iter_ver_actual(const hash_iter_t *iter){
 		return NULL;
 	}
 
-	return iter->hash->tabla[act]->clave;
+	return iter->hash->tabla[iter->act]->clave;
 }
 
 
