@@ -76,33 +76,53 @@ nodo_hash_t* crear_tabla(size_t tamaño){
 	}
 	return tabla;
 }
-void colision(nodo_hash_t* tabla, char* clave, size_t posicion){
-	for(size_t i = posicion; i < capacidad; i++){
-		if(hash -> tabla[i] -> estado != OCUPADO) hash -> tabla[i] -> clave = clave;
-	}
+size_t buscar_posicion(hash_t* hash, char* clave, size_t posicion){
+	size_t pos_inicial = posicion;
+	while (hash -> tabla[posicion]->estado == OCUPADO){
 
+		if(hash -> tabla[posicion] -> clave == clave) return posicion;
+
+		posicion++;
+
+		if(posicion == hash -> capacidad) posicion = 0;
+
+		if(posicion == pos_inicial) return NULL;
+	}
+	return posicion
+}
+
+void asignar(hash_t* hash, size_t posicion, char* clave,void* dato, estado_t estado){
+	hash -> tabla[posicion] -> clave = clave;
+	hash -> tabla[posicion] -> dato =  dato;
+	hash -> tabla[posicion] -> estado = estado;
 }
 
 bool redimencion(hash_t* hash, size_t nuevo_tam){
-	nodo_hash_t* ant_tabla = hash -> tabla; //tabla anterior
-	size_t tam_ant = hash -> capacidad; // capacidad anterior
+	/* crea una tabla nueva, recorre la vieja
+	obtiene una posicion en la tabla nueva de la clave de la vieja
+	si esta ocupada hay colision
+	si el estado es vacio actualizo clave y dato*/
 
-	hash -> tabla = crear_tabla(nuevo_tam); //tabla nueva
-	hash -> capacidad = nuevo_tam; // nueva capacidad
+	nodo_hash_t* ant_tabla = hash -> tabla; 
+	size_t tam_ant = hash -> capacidad; 
 
-	for(size_t i = 0; i < tam_ant; i++){ //itero la tabla anterior
+	hash -> tabla = crear_tabla(nuevo_tam);
+	if(!hash->tabla) return false
+	hash -> capacidad = nuevo_tam; 
 
-		if(ant_tabla[i] -> estado != OCUPADO) continue; //mira en la tabla anterior
+	for(size_t i = 0; i < tam_ant; i++){ 
 
-		size_t posicion = hashing(nuevo_tam, ant_tabla[i] -> clave); //posicion nueva tabla-clave de la anteior
-		if(hash -> tabla[posicion] -> estado == OCUPADO){ //me fijo que el estado de la posicion de la tabla este ocupada
-			if(strcmp(hash -> tabla[posicion] > clave ,ant_tabla[i] -> clave != 0)) colision(hash, ant_tabla[i] -> clave, posicion + 1); //si las claves son disintas hay colision
-		}else{ //caso estado sea vacio o borrado
-			hash -> tabla[posicion] -> clave = ant_tabla[i] -> clave;
-			
+		if(ant_tabla[i] -> estado != OCUPADO) continue;
+
+		size_t posicion = hashing(nuevo_tam, ant_tabla[i] -> clave); 
+		if(hash -> tabla[posicion] -> estado == OCUPADO){ 
+			posicion = buscar_posicion(hash, ant_tabla[i] -> clave, posicion);
 		}
-		hash -> tabla[posicion] -> dato = ant_tabla[i] -> dato;
+		asignar(hash ,posicion, ant_tabla[i] -> clave, ant[i] -> dato,OCUPADO);
+		hash -> cantidad ++;
 	}
+	hash_destruir(ant_tabla);
+	return true;
 }
 
 /* *****************************************************************
@@ -129,22 +149,46 @@ bool hash_guardar(hash_t *hash, const char *clave, void *dato){
 	size_t posicion = hashing(hash -> capacidad, clave);
 
 	size_t factor_carga = hash -> cantidad / hash -> capacidad;
-	if(factor_carga >= CAP_MAX) redimencion(hash, hash -> capacidad * AUMENTA);
+	if(factor_carga >= CAP_MAX){
+		bool estado_redimension = redimencion(hash, hash -> capacidad * AUMENTA);
+		if(!estado_redimension) return false;
+	}
+	if(hash ->tabla[posicion]-> estado == OCUPADO){
+		posicion = buscar_posicion(hash,clave,posicion);
+	asignar(hash ,posicion, clave, dato,OCUPADO);
 
-	if(hash -> estado == OCUPADO && hash_pertenece(hash,clave)) hash -> tabla[posicion] -> dato = dato;
+	hash -> cantidad ++;
+	return true;
 
 }
 
 
-void *hash_borrar(hash_t *hash, const char *clave);
+void *hash_borrar(hash_t *hash, const char *clave){
+	size_t posicion = hashing(hash -> capacidad, clave);
+
+	if(hash -> cantidad == hash -> capacidad/REDUCE && hash -> cantidad / REDUCE > TAM_MIN){
+		bool estado_redimension = redimencion(hash, hash -> capacidad /REDUCE);
+		if(!estado_redimension) return NULL;
+	}
+	void* dato = hash_obtener(hash,clave);
+	posicion = buscar_posicion(hash,clave,posicion);
+	asignar(hash ,posicion, NULL, NULL,BORRADO);
+	hash -> cantidad --;
+	return dato;
+}
 
 
 void *hash_obtener(const hash_t *hash, const char *clave){
-
+	size_t posicion = hashing(hash -> capacidad, clave);
+	if(!hash_pertenece(hash, clave){
+		posicion = buscar_posicion(hash,clave,posicion);
+		if(!posicion) return NULL;
+	return hash -> tabla[posicion] -> dato;
 }
 
 
 bool hash_pertenece(const hash_t *hash, const char *clave){
+	if(!hash || !clave) return false;
 	size_t posicion = hashing(hash -> capacidad, clave);
 	if(hash -> tabla[posicion] -> clave == clave) return true;
 	return false
