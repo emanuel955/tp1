@@ -5,8 +5,12 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#define AUMENTA 2
+#define REDUCE 4
+#define CAP_MAX 0.8
+
 /* Definición del struct nodo_hash. */
-typedef enum{VACIO, BORRADO, DATO} estado_t;
+typedef enum{VACIO, BORRADO, OCUPADO} estado_t;
 
 typedef struct nodo_hash{
 	char* clave;
@@ -59,6 +63,48 @@ size_t hashing(size_t capacidad, const char *clave){
   return hash % capacidad;
 }
 
+nodo_hash_t* crear_tabla(size_t tamaño){
+	nodo_hash_t* tabla = malloc(tamaño * sizeof(nodo_hash_t));
+	if (!hash->tabla){
+		free(hash);
+		return NULL;
+	}
+	for(size_t i=0; i < TAM_MIN;i++){
+		hash -> tabla[i] -> clave = NULL;
+		hash -> tabla[i] -> valor = NULL;
+		hash -> tabla[i] -> estado = VACIO;
+	}
+	return tabla;
+}
+void colision(nodo_hash_t* tabla, char* clave, size_t posicion){
+	for(size_t i = posicion; i < capacidad; i++){
+		if(hash -> tabla[i] -> estado != OCUPADO) hash -> tabla[i] -> clave = clave;
+	}
+
+}
+
+bool redimencion(hash_t* hash, size_t nuevo_tam){
+	nodo_hash_t* ant_tabla = hash -> tabla; //tabla anterior
+	size_t tam_ant = hash -> capacidad; // capacidad anterior
+
+	hash -> tabla = crear_tabla(nuevo_tam); //tabla nueva
+	hash -> capacidad = nuevo_tam; // nueva capacidad
+
+	for(size_t i = 0; i < tam_ant; i++){ //itero la tabla anterior
+
+		if(ant_tabla[i] -> estado != OCUPADO) continue; //mira en la tabla anterior
+
+		size_t posicion = hashing(nuevo_tam, ant_tabla[i] -> clave); //posicion nueva tabla-clave de la anteior
+		if(hash -> tabla[posicion] -> estado == OCUPADO){ //me fijo que el estado de la posicion de la tabla este ocupada
+			if(strcmp(hash -> tabla[posicion] > clave ,ant_tabla[i] -> clave != 0)) colision(hash, ant_tabla[i] -> clave, posicion + 1); //si las claves son disintas hay colision
+		}else{ //caso estado sea vacio o borrado
+			hash -> tabla[posicion] -> clave = ant_tabla[i] -> clave;
+			
+		}
+		hash -> tabla[posicion] -> dato = ant_tabla[i] -> dato;
+	}
+}
+
 /* *****************************************************************
  *                   	 PRIMITIVAS DEL HASH
  * *****************************************************************/
@@ -69,17 +115,8 @@ hash_t *hash_crear(hash_destruir_dato_t destruir_dato){
 		return NULL;
 	}
 
-	hash->tabla = malloc(TAM_MIN * sizeof(nodo_hash_t));
-	if (!hash->tabla){
-		free(hash);
-		return NULL;
-	}
-	for(size_t i=0; i < TAM_MIN;i++){
-		hash -> tabla[i] -> clave = NULL;
-		hash -> tabla[i] -> valor = NULL;
-		hash -> tabla[i] -> estado = VACIO;
-	}
-
+	hash->tabla = crear_tabla(TAM_MIN);
+	
 	hash->cantidad = 0;
 	hash->capacidad = TAM_MIN;
 	hash->destruir_dato = destruir_dato;
@@ -88,7 +125,15 @@ hash_t *hash_crear(hash_destruir_dato_t destruir_dato){
 }
 
 
-bool hash_guardar(hash_t *hash, const char *clave, void *dato);
+bool hash_guardar(hash_t *hash, const char *clave, void *dato){
+	size_t posicion = hashing(hash -> capacidad, clave);
+
+	size_t factor_carga = hash -> cantidad / hash -> capacidad;
+	if(factor_carga >= CAP_MAX) redimencion(hash, hash -> capacidad * AUMENTA);
+
+	if(hash -> estado == OCUPADO && hash_pertenece(hash,clave)) hash -> tabla[posicion] -> dato = dato;
+
+}
 
 
 void *hash_borrar(hash_t *hash, const char *clave);
@@ -101,7 +146,7 @@ void *hash_obtener(const hash_t *hash, const char *clave){
 
 bool hash_pertenece(const hash_t *hash, const char *clave){
 	size_t posicion = hashing(hash -> capacidad, clave);
-		else if(hash -> tabla[posicion] -> clave == clave) return true;
+	if(hash -> tabla[posicion] -> clave == clave) return true;
 	return false
 }
 
