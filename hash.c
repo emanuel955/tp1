@@ -87,13 +87,21 @@ bool hash_guardar(hash_t *hash, const char *clave, void *dato);
 void *hash_borrar(hash_t *hash, const char *clave);
 
 
-void *hash_obtener(const hash_t *hash, const char *clave);
+void *hash_obtener(const hash_t *hash, const char *clave){
+
+}
 
 
-bool hash_pertenece(const hash_t *hash, const char *clave);
+bool hash_pertenece(const hash_t *hash, const char *clave){
+	size_t posicion = hashing(hash -> capacidad, clave);
+		else if(hash -> tabla[posicion] -> clave == clave) return true;
+	return false
+}
 
 
-size_t hash_cantidad(const hash_t *hash);
+size_t hash_cantidad(const hash_t *hash){
+	return hash -> cantidad;
+}
 
 
 void hash_destruir(hash_t *hash);
