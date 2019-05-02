@@ -186,7 +186,7 @@ void *hash_obtener(const hash_t *hash, const char *clave){
 bool hash_pertenece(const hash_t *hash, const char *clave){
 	if(!hash || !clave) return false;
 	size_t posicion = buscar_posicion(hash, clave);
-	if(hash -> tabla[posicion].estado != OCUPADO) false;
+	if(hash -> tabla[posicion].estado != OCUPADO) return false;
 	return true;
 }
 
