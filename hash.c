@@ -3,14 +3,22 @@
 #define PIVOTE2 63689
 
 #include <stdbool.h>
+#include <string.h>
+#include <stdlib.h>
 #include <stddef.h>
+#include "hash.h"
+
+#define AUMENTA 2
+#define REDUCE 4
+#define CAP_MAX 0.8
 
 /* Definición del struct nodo_hash. */
+typedef enum{VACIO, BORRADO, OCUPADO} estado_t;
 
 typedef struct nodo_hash{
 	char* clave;
 	void* dato;
-	int estado;
+	estado_t estado;
 } nodo_hash_t;
 
 /* Definición del struct hash. */
@@ -29,19 +37,6 @@ struct hash_iter{
 	size_t act;
 };
 
-/*
-Guardar
-Se debe guardar una copia de la clave!
-En el abierto se inserta en la lista correspondiente al índice obtenido con la función de hashing.
-En el cerrado se busca a partir del índice obtenido con la función de hashing una posición que esté libre (Linear Probing). Para esto es necesario tener en cuenta los estados (LIBRE,  OCUPADO y BORRADO, sobre el último se va a hablar en siguientes clases). Los estados lo debería implementar usando enum.
-Si se quiere guardar con una clave que ya está en el TDA, se debe reemplazar el valor guardado por el nuevo.
-
-buscar lo mismo que guardar
-
-carga:
-La cantidad de nodos no vacíos, esto es, en esatados ocupado o borrado. En el nodo cerrado, se usa este valor para calcular la carga, en lugar de la cantidad.
-Por otra parte, date cuenta que solo hace falta actualizarlo en insertar, al pasar un nodo de vacío a ocupado.
-*/
 
 /* *****************************************************************
  *                  	  FUNCION DE HASHING
@@ -56,6 +51,67 @@ size_t hashing(size_t capacidad, const char *clave){
   }
   return hash % capacidad;
 }
+char* copiar_clave(const char* clave){
+	char* copia = malloc(sizeof(char));
+	strcpy(copia,clave);
+	return copia;
+
+}
+nodo_hash_t* crear_tabla(size_t tamanio){
+	nodo_hash_t* tabla = malloc(tamanio * sizeof(nodo_hash_t));
+	if (!tabla){
+		return NULL;
+	}
+	for(size_t i=0; i < TAM_MIN;i++){
+		tabla[i].clave = NULL;
+		tabla[i].dato = NULL;
+		tabla[i].estado = VACIO;
+	}
+	return tabla;
+}
+size_t buscar_posicion(const hash_t* hash, const char* clave){
+	/*busca una posicion libre o que tenga la misma clave*/
+
+	size_t posicion = hashing(hash -> capacidad, clave);
+	while (hash -> tabla[posicion].estado == OCUPADO || hash -> tabla[posicion].estado == BORRADO){
+
+		if(strcmp(hash -> tabla[posicion].clave, clave) == 0) return posicion;
+
+		posicion++;
+
+		if(posicion == hash -> capacidad) posicion = 0;
+	}
+	return posicion;
+}
+
+void asignar(hash_t* hash, size_t posicion,void* dato, estado_t estado){
+	hash -> tabla[posicion].dato =  dato;
+	hash -> tabla[posicion].estado = estado;
+}
+
+bool redimencion(hash_t* hash, size_t nuevo_tam){
+	/* crea una tabla nueva, recorre la vieja
+	obtiene una posicion en la tabla nueva de la clave de la vieja*/
+
+	nodo_hash_t* ant_tabla = hash -> tabla; 
+
+	hash -> tabla = crear_tabla(nuevo_tam);
+	if(!hash->tabla){
+		hash -> tabla = ant_tabla;
+		return false;
+	} 
+	hash -> capacidad = nuevo_tam; 
+
+	for(size_t i = 0; i < hash -> capacidad; i++){
+		if(ant_tabla[i].estado != OCUPADO) continue;
+
+		size_t posicion = buscar_posicion(hash, ant_tabla[i].clave);
+		hash -> tabla[posicion].clave = ant_tabla[i].clave;
+		asignar(hash, posicion,ant_tabla[i].dato, OCUPADO);
+	}
+	free(ant_tabla);
+	return true;
+}
 
 /* *****************************************************************
  *                   	 PRIMITIVAS DEL HASH
@@ -67,12 +123,12 @@ hash_t *hash_crear(hash_destruir_dato_t destruir_dato){
 		return NULL;
 	}
 
-	hash->tabla = malloc(TAM_MIN * sizeof(nodo_hash_t));
-	if (!hash->tabla){
+	hash->tabla = crear_tabla(TAM_MIN);
+	if(!hash -> tabla){
 		free(hash);
 		return NULL;
 	}
-
+	
 	hash->cantidad = 0;
 	hash->capacidad = TAM_MIN;
 	hash->destruir_dato = destruir_dato;
@@ -81,21 +137,57 @@ hash_t *hash_crear(hash_destruir_dato_t destruir_dato){
 }
 
 
-bool hash_guardar(hash_t *hash, const char *clave, void *dato);
+bool hash_guardar(hash_t *hash, const char *clave, void *dato){
+	
+	size_t factor_carga = hash -> cantidad / hash -> capacidad;
+	if(factor_carga >= CAP_MAX){
+		bool estado_redimension = redimencion(hash, hash -> capacidad * AUMENTA);
+		if(!estado_redimension) return false;
+	}
 
-
-void *hash_borrar(hash_t *hash, const char *clave);
-
-
-void *hash_obtener(const hash_t *hash, const char *clave){
+	size_t posicion = buscar_posicion(hash, clave);
+	if(hash -> tabla[posicion].estado == OCUPADO){
+		if(hash -> destruir_dato){
+			hash -> destruir_dato(hash -> tabla[posicion].dato);
+		}
+	}else{
+		hash -> tabla[posicion].clave = copiar_clave(clave);
+	}
+	asignar(hash, posicion, dato, OCUPADO);
+	hash -> cantidad ++;
+	return true;
 
 }
 
 
+void *hash_borrar(hash_t *hash, const char *clave){
+
+	if(hash -> cantidad == hash -> capacidad/REDUCE && hash -> cantidad / REDUCE > TAM_MIN){
+		bool estado_redimension = redimencion(hash, hash -> capacidad /REDUCE);
+		if(!estado_redimension) return NULL;
+	}
+	size_t posicion = buscar_posicion(hash, clave);
+	if(hash -> tabla[posicion].estado != OCUPADO) return NULL;
+	void* valor = hash -> tabla[posicion].dato;
+	free(hash -> tabla[posicion].clave);
+	asignar(hash,posicion,NULL,BORRADO);
+	hash -> cantidad --;
+	return valor;
+}
+
+
+void *hash_obtener(const hash_t *hash, const char *clave){
+	if(!hash_pertenece(hash, clave)) return NULL;
+	size_t posicion = buscar_posicion(hash, clave);
+	return hash -> tabla[posicion].dato;
+}
+
+
 bool hash_pertenece(const hash_t *hash, const char *clave){
-	size_t posicion = hashing(hash -> capacidad, clave);
-		else if(hash -> tabla[posicion] -> clave == clave) return true;
-	return false
+	if(!hash || !clave) return false;
+	size_t posicion = buscar_posicion(hash, clave);
+	if(hash -> tabla[posicion].estado != OCUPADO) false;
+	return true;
 }
 
 
@@ -104,7 +196,18 @@ size_t hash_cantidad(const hash_t *hash){
 }
 
 
-void hash_destruir(hash_t *hash);
+void hash_destruir(hash_t *hash){
+	for (int i = 0; i < hash ->capacidad; i++){
+		if(hash -> tabla[i].estado == OCUPADO){
+			if(hash -> destruir_dato){
+				hash -> destruir_dato(hash -> tabla[i].dato);
+			}
+		}
+		free(hash -> tabla[i].clave);
+	}
+	free(hash -> tabla);
+	free(hash);
+}
 
 /* *****************************************************************
  *                FUNCION AUXILIAR PARA EL ITERADOR
@@ -113,7 +216,7 @@ void hash_destruir(hash_t *hash);
 size_t posicionar_actual(const hash_t *hash, int posicion){
 	posicion++;
 
-	while(hash->tabla[posicion].estado != DATO){	// Mientras que el estado del nodo actual de la tabla de Hash sea distinto de DATO.
+	while(hash->tabla[posicion].estado != OCUPADO){	// Mientras que el estado del nodo actual de la tabla de Hash sea distinto de DATO.
 		
 		if (posicion == hash->capacidad){			// Si la posicion es igual a la capacidad total de la tabla de Hash.
 			return hash->capacidad;
@@ -121,7 +224,7 @@ size_t posicionar_actual(const hash_t *hash, int posicion){
 		posicion++;
 	}
 
-	return posicion
+	return posicion;
 }
 
 /* *****************************************************************
@@ -135,13 +238,13 @@ hash_iter_t *hash_iter_crear(const hash_t *hash){
 	}
 
 	iter->hash = hash;
-	iter->act = posicionar_actual(iter->hash, -1)
+	iter->act = posicionar_actual(iter->hash, -1);
 	return iter;
 }
 
 
 bool hash_iter_avanzar(hash_iter_t *iter){
-	if hash_iter_al_final(iter){
+	if (hash_iter_al_final(iter)){
 		return false;
 	}
 
@@ -151,7 +254,7 @@ bool hash_iter_avanzar(hash_iter_t *iter){
 
 
 const char *hash_iter_ver_actual(const hash_iter_t *iter){
-	if hash_iter_al_final(iter){
+	if (hash_iter_al_final(iter)){
 		return NULL;
 	}
 
@@ -167,3 +270,4 @@ bool hash_iter_al_final(const hash_iter_t *iter){
 void hash_iter_destruir(hash_iter_t* iter){
 	free(iter);
 }
+
