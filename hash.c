@@ -3,7 +3,10 @@
 #define PIVOTE2 63689
 
 #include <stdbool.h>
+#include <string.h>
+#include <stdlib.h>
 #include <stddef.h>
+#include "hash.h"
 
 #define AUMENTA 2
 #define REDUCE 4
@@ -24,7 +27,7 @@ struct hash{
 	nodo_hash_t* tabla;					//	Arreglo conformado por nodos de hash.
 	size_t cantidad;					//	Cantidad de nodos de hash almacenados.
 	size_t capacidad;					//	Cantidad total de nodos que puede almacenar el hash.
-	hash_destruir_dato_t destruir_dato;	//	Funcion para destruir los datos del hash.
+	//hash_destruir_dato_t destruir_dato;	//	Funcion para destruir los datos del hash.
 };
 
 /* Definición del struct hash_iter. */
@@ -62,39 +65,46 @@ size_t hashing(size_t capacidad, const char *clave){
   }
   return hash % capacidad;
 }
+char* copiar_clave(const char* clave){
+	char* copia = malloc(sizeof(char));
+	strcpy(copia,clave);
+	return copia;
 
-nodo_hash_t* crear_tabla(size_t tamaño){
-	nodo_hash_t* tabla = malloc(tamaño * sizeof(nodo_hash_t));
-	if (!hash->tabla){
-		free(hash);
+}
+nodo_hash_t* crear_tabla(size_t tamanio){
+	nodo_hash_t* tabla = malloc(tamanio * sizeof(nodo_hash_t));
+	if (!tabla){
 		return NULL;
 	}
 	for(size_t i=0; i < TAM_MIN;i++){
-		hash -> tabla[i] -> clave = NULL;
-		hash -> tabla[i] -> valor = NULL;
-		hash -> tabla[i] -> estado = VACIO;
+		tabla[i].clave = NULL;
+		tabla[i].dato = NULL;
+		tabla[i].estado = VACIO;
 	}
 	return tabla;
 }
-size_t buscar_posicion(hash_t* hash, char* clave, size_t posicion){
-	size_t pos_inicial = posicion;
-	while (hash -> tabla[posicion]->estado == OCUPADO){
+bool comparar_claves(const char* clave1, const char* clave2){
+	return strcmp(clave1, clave2) == 0;
+}
+size_t buscar_posicion(const hash_t* hash, const char* clave){
+	/*busca una posicion libre o que tenga la misma clave*/
+	size_t posicion = hashing(hash -> capacidad, clave);
+	//toma el caso de borrado por que puede que hubo colision
+	//y este mas abajo
+	while (hash -> tabla[posicion].estado == OCUPADO || hash -> tabla[posicion].estado == BORRADO){
 
-		if(hash -> tabla[posicion] -> clave == clave) return posicion;
+		if(strcmp(hash -> tabla[posicion].clave, clave) == 0) return posicion;
 
 		posicion++;
 
 		if(posicion == hash -> capacidad) posicion = 0;
-
-		if(posicion == pos_inicial) return NULL;
 	}
-	return posicion
+	return posicion;
 }
 
-void asignar(hash_t* hash, size_t posicion, char* clave,void* dato, estado_t estado){
-	hash -> tabla[posicion] -> clave = clave;
-	hash -> tabla[posicion] -> dato =  dato;
-	hash -> tabla[posicion] -> estado = estado;
+void asignar(hash_t* hash, size_t posicion,void* dato, estado_t estado){
+	hash -> tabla[posicion].dato =  dato;
+	hash -> tabla[posicion].estado = estado;
 }
 
 bool redimencion(hash_t* hash, size_t nuevo_tam){
@@ -107,21 +117,25 @@ bool redimencion(hash_t* hash, size_t nuevo_tam){
 	size_t tam_ant = hash -> capacidad; 
 
 	hash -> tabla = crear_tabla(nuevo_tam);
-	if(!hash->tabla) return false
+	if(!hash->tabla){
+		hash -> tabla = ant_tabla;
+		return false;
+	} 
 	hash -> capacidad = nuevo_tam; 
 
 	for(size_t i = 0; i < tam_ant; i++){ 
 
-		if(ant_tabla[i] -> estado != OCUPADO) continue;
+		if(ant_tabla[i].estado != OCUPADO) continue;
 
-		size_t posicion = hashing(nuevo_tam, ant_tabla[i] -> clave); 
-		if(hash -> tabla[posicion] -> estado == OCUPADO){ 
-			posicion = buscar_posicion(hash, ant_tabla[i] -> clave, posicion);
+		size_t posicion = hashing(nuevo_tam, ant_tabla[i].clave); 
+		if(hash -> tabla[posicion].estado == OCUPADO){ 
+			posicion = buscar_posicion(hash, ant_tabla[i].clave, posicion);
+			if(!posicion) return NULL;
 		}
-		asignar(hash ,posicion, ant_tabla[i] -> clave, ant[i] -> dato,OCUPADO);
+		asignar(hash ,posicion, ant_tabla[i].clave, ant_tabla[i].dato,OCUPADO);
 		hash -> cantidad ++;
 	}
-	hash_destruir(ant_tabla);
+	free(ant_tabla);
 	return true;
 }
 
@@ -136,6 +150,10 @@ hash_t *hash_crear(hash_destruir_dato_t destruir_dato){
 	}
 
 	hash->tabla = crear_tabla(TAM_MIN);
+	if(!hash -> tabla){
+		free(hash);
+		return NULL;
+	}
 	
 	hash->cantidad = 0;
 	hash->capacidad = TAM_MIN;
@@ -146,17 +164,20 @@ hash_t *hash_crear(hash_destruir_dato_t destruir_dato){
 
 
 bool hash_guardar(hash_t *hash, const char *clave, void *dato){
-	size_t posicion = hashing(hash -> capacidad, clave);
-
+	
 	size_t factor_carga = hash -> cantidad / hash -> capacidad;
 	if(factor_carga >= CAP_MAX){
 		bool estado_redimension = redimencion(hash, hash -> capacidad * AUMENTA);
 		if(!estado_redimension) return false;
 	}
-	if(hash ->tabla[posicion]-> estado == OCUPADO){
-		posicion = buscar_posicion(hash,clave,posicion);
-	asignar(hash ,posicion, clave, dato,OCUPADO);
 
+	size_t posicion = hashing(hash -> capacidad, clave);
+	if(hash -> tabla[posicion].estado == OCUPADO){
+		destruir_dato(hash -> tabla[posicion].dato);
+	}else{
+		hash -> tabla[posicion].clave = copiar_clave(clave);
+	}
+	asignar(hash, posicion, dato, OCUPADO);
 	hash -> cantidad ++;
 	return true;
 
@@ -179,19 +200,17 @@ void *hash_borrar(hash_t *hash, const char *clave){
 
 
 void *hash_obtener(const hash_t *hash, const char *clave){
-	size_t posicion = hashing(hash -> capacidad, clave);
-	if(!hash_pertenece(hash, clave){
-		posicion = buscar_posicion(hash,clave,posicion);
-		if(!posicion) return NULL;
-	return hash -> tabla[posicion] -> dato;
+	if(!hash_pertenece(hash, clave)) return NULL;
+	size_t posicion = buscar_posicion(hash, clave);
+	return hash -> tabla[posicion].dato;
 }
 
 
 bool hash_pertenece(const hash_t *hash, const char *clave){
 	if(!hash || !clave) return false;
-	size_t posicion = hashing(hash -> capacidad, clave);
-	if(hash -> tabla[posicion] -> clave == clave) return true;
-	return false
+	size_t posicion = buscar_posicion(hash, clave);
+	if(hash -> tabla[posicion].estado != OCUPADO) false;
+	return true;
 }
 
 
@@ -200,7 +219,7 @@ size_t hash_cantidad(const hash_t *hash){
 }
 
 
-void hash_destruir(hash_t *hash);
+//void hash_destruir(hash_t *hash);
 
 /* *****************************************************************
  *                     PRIMITIVAS DEL ITERADOR
@@ -221,4 +240,3 @@ bool hash_iter_al_final(const hash_iter_t *iter);
 // Destruye iterador
 void hash_iter_destruir(hash_iter_t* iter);
 
-#endif // HASH_H
