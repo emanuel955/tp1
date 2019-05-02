@@ -33,7 +33,7 @@ struct hash{
 /* Definición del struct hash_iter. */
 
 struct hash_iter{
-	hash_t* hash;
+	const hash_t* hash;
 	size_t act;
 };
 
@@ -213,8 +213,11 @@ void hash_destruir(hash_t *hash){
  *                FUNCION AUXILIAR PARA EL ITERADOR
  * *****************************************************************/
 
-size_t posicionar_actual(const hash_t *hash, int posicion){
-	posicion++;
+size_t posicionar_actual(const hash_t *hash, size_t posicion){
+
+	if (posicion == hash->capacidad){			// Si la posicion es igual a la capacidad total de la tabla de Hash.
+		return hash->capacidad;
+	}
 
 	while(hash->tabla[posicion].estado != OCUPADO){	// Mientras que el estado del nodo actual de la tabla de Hash sea distinto de DATO.
 		
@@ -238,7 +241,7 @@ hash_iter_t *hash_iter_crear(const hash_t *hash){
 	}
 
 	iter->hash = hash;
-	iter->act = posicionar_actual(iter->hash, -1);
+	iter->act = posicionar_actual(iter->hash, 0);
 	return iter;
 }
 
@@ -248,7 +251,7 @@ bool hash_iter_avanzar(hash_iter_t *iter){
 		return false;
 	}
 
-	iter->act == posicionar_actual(iter->hash, iter->act);
+	iter->act = posicionar_actual(iter->hash, iter->act + 1);
 	return true;
 }
 
