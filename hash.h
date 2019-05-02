@@ -71,31 +71,35 @@ void hash_destruir(hash_t *hash);
  * *****************************************************************/
 
 // Crea un iterador para el hash.
+// El iterador contiene una referencia a la tabla de hash,
+// y un size_t actual que tiene la posicion del primer nodo disponible del hash.
 // Pre: Recibe un hash por parametro.
-// Post: Devuelve un iterador con un nodo anterior y un nodo actual que apunta al primer elemento del hash.
+// Post: Devuelve un iterador para el hash.
 hash_iter_t *hash_iter_crear(const hash_t *hash);
 
-// Si el nodo actual del iterador es distinto de NULL,
-// hace que el nodo anterior apunte al actual y que actual apunte al siguiente elemento del hash,
-// devuelve true si pudo apuntar al siguiente, false en caso de que el actual sea NULL.
+// Si el actual del iterador no se encuentra al final,
+// hace que el actual obtenga la posicion del siguiente nodo disponible del hash.
+// Devuelve true, si pudo obtener al siguiente.
+// Devuelve false, si el actual ya se encuentre al final del hash.
 // Pre: El iterador fue creado.
-// Post: Avanza en uno la iteracion del hash.
+// Post: Avanza el actual del iterador de hash.
 bool hash_iter_avanzar(hash_iter_t *iter);
 
-// Devuelve el dato del elemento al que nodo actual esta apuntando,
-// en caso de que el nodo actual sea NULL, devuelve NULL.
-// Pre: EL iterador fue creado
-// Post: Devuelve el elemento al que apunta el nodo actual.
+// Si el actual del iterador no se encuentra al final.
+// Devuelve la clave del nodo actual de la tabla de hash.
+// Devuelve NULL, si el actual ya se encuentre al final del hash.
+// Pre: El iterador fue creado.
+// Post: Devuelve la clave del nodo actual o NULL, dependiendo de la posicion actual.
 const char *hash_iter_ver_actual(const hash_iter_t *iter);
 
-// Se fija si el nodo actual del iterador apunta a NULL.
-// Devuelve true si el nodo actual es NULL, false en caso contrario.
+// Se fija si el actual del iterador es igual a la capacidad total del hash.
+// Devuelve true si es igual, false en caso contrario.
 // Pre: El iterador fue creado.
-// Post: Devuelve si el nodo actual es NULL o no.
+// Post: Devuelve si el actual esta o no, al final del hash.
 bool hash_iter_al_final(const hash_iter_t *iter);
 
-// Destruye el iterador del hash,
-// no destruye el hash ni tampoco sus elementos.
+// Destruye el iterador del hash.
+// No destruye el hash, ni tampoco ninguno de sus elementos.
 // Pre: El iterador fue creado.
 // Post: Destruye el iterador.
 void hash_iter_destruir(hash_iter_t* iter);

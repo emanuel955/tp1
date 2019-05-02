@@ -34,23 +34,9 @@ struct hash{
 
 struct hash_iter{
 	hash_t* hash;
-	nodo_hash_t* ant;
-	nodo_hash_t* act;
+	size_t act;
 };
 
-/*
-Guardar
-Se debe guardar una copia de la clave!
-En el abierto se inserta en la lista correspondiente al índice obtenido con la función de hashing.
-En el cerrado se busca a partir del índice obtenido con la función de hashing una posición que esté libre (Linear Probing). Para esto es necesario tener en cuenta los estados (LIBRE,  OCUPADO y BORRADO, sobre el último se va a hablar en siguientes clases). Los estados lo debería implementar usando enum.
-Si se quiere guardar con una clave que ya está en el TDA, se debe reemplazar el valor guardado por el nuevo.
-
-buscar lo mismo que guardar
-
-carga:
-La cantidad de nodos no vacíos, esto es, en esatados ocupado o borrado. En el nodo cerrado, se usa este valor para calcular la carga, en lugar de la cantidad.
-Por otra parte, date cuenta que solo hace falta actualizarlo en insertar, al pasar un nodo de vacío a ocupado.
-*/
 
 /* *****************************************************************
  *                  	  FUNCION DE HASHING
@@ -161,7 +147,9 @@ bool hash_guardar(hash_t *hash, const char *clave, void *dato){
 
 	size_t posicion = buscar_posicion(hash, clave);
 	if(hash -> tabla[posicion].estado == OCUPADO){
-		hash -> destruir_dato(hash -> tabla[posicion].dato);
+		if(hash -> destruir_dato){
+			hash -> destruir_dato(hash -> tabla[posicion].dato);
+		}
 	}else{
 		hash -> tabla[posicion].clave = copiar_clave(clave);
 	}
@@ -211,7 +199,9 @@ size_t hash_cantidad(const hash_t *hash){
 void hash_destruir(hash_t *hash){
 	for (int i = 0; i < hash ->capacidad; i++){
 		if(hash -> tabla[i].estado == OCUPADO){
-			hash -> destruir_dato(hash -> tabla[i].dato);
+			if(hash -> destruir_dato){
+				hash -> destruir_dato(hash -> tabla[i].dato);
+			}
 		}
 		free(hash -> tabla[i].clave);
 	}
@@ -220,21 +210,64 @@ void hash_destruir(hash_t *hash){
 }
 
 /* *****************************************************************
+ *                FUNCION AUXILIAR PARA EL ITERADOR
+ * *****************************************************************/
+
+size_t posicionar_actual(const hash_t *hash, int posicion){
+	posicion++;
+
+	while(hash->tabla[posicion].estado != OCUPADO){	// Mientras que el estado del nodo actual de la tabla de Hash sea distinto de DATO.
+		
+		if (posicion == hash->capacidad){			// Si la posicion es igual a la capacidad total de la tabla de Hash.
+			return hash->capacidad;
+		}
+		posicion++;
+	}
+
+	return posicion;
+}
+
+/* *****************************************************************
  *                     PRIMITIVAS DEL ITERADOR
  * *****************************************************************/
 
-// Crea iterador
-hash_iter_t *hash_iter_crear(const hash_t *hash);
+hash_iter_t *hash_iter_crear(const hash_t *hash){
+	hash_iter_t* iter = malloc(sizeof(hash_iter_t));
+	if (!iter){
+		return NULL;
+	}
 
-// Avanza iterador
-bool hash_iter_avanzar(hash_iter_t *iter);
+	iter->hash = hash;
+	iter->act = posicionar_actual(iter->hash, -1);
+	return iter;
+}
 
-// Devuelve clave actual, esa clave no se puede modificar ni liberar.
-const char *hash_iter_ver_actual(const hash_iter_t *iter);
 
-// Comprueba si terminó la iteración
-bool hash_iter_al_final(const hash_iter_t *iter);
+bool hash_iter_avanzar(hash_iter_t *iter){
+	if (hash_iter_al_final(iter)){
+		return false;
+	}
 
-// Destruye iterador
-void hash_iter_destruir(hash_iter_t* iter);
+	iter->act == posicionar_actual(iter->hash, iter->act);
+	return true;
+}
+
+
+const char *hash_iter_ver_actual(const hash_iter_t *iter){
+	if (hash_iter_al_final(iter)){
+		return NULL;
+	}
+
+	return iter->hash->tabla[iter->act].clave;
+}
+
+
+bool hash_iter_al_final(const hash_iter_t *iter){
+	return iter->act == iter->hash->capacidad;
+}
+
+
+void hash_iter_destruir(hash_iter_t* iter){
+	free(iter);
+}
 
