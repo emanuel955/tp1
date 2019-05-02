@@ -27,7 +27,7 @@ struct hash{
 	nodo_hash_t* tabla;					//	Arreglo conformado por nodos de hash.
 	size_t cantidad;					//	Cantidad de nodos de hash almacenados.
 	size_t capacidad;					//	Cantidad total de nodos que puede almacenar el hash.
-	//hash_destruir_dato_t destruir_dato;	//	Funcion para destruir los datos del hash.
+	hash_destruir_dato_t destruir_dato;	//	Funcion para destruir los datos del hash.
 };
 
 /* Definición del struct hash_iter. */
@@ -83,14 +83,10 @@ nodo_hash_t* crear_tabla(size_t tamanio){
 	}
 	return tabla;
 }
-bool comparar_claves(const char* clave1, const char* clave2){
-	return strcmp(clave1, clave2) == 0;
-}
 size_t buscar_posicion(const hash_t* hash, const char* clave){
 	/*busca una posicion libre o que tenga la misma clave*/
+
 	size_t posicion = hashing(hash -> capacidad, clave);
-	//toma el caso de borrado por que puede que hubo colision
-	//y este mas abajo
 	while (hash -> tabla[posicion].estado == OCUPADO || hash -> tabla[posicion].estado == BORRADO){
 
 		if(strcmp(hash -> tabla[posicion].clave, clave) == 0) return posicion;
@@ -109,12 +105,9 @@ void asignar(hash_t* hash, size_t posicion,void* dato, estado_t estado){
 
 bool redimencion(hash_t* hash, size_t nuevo_tam){
 	/* crea una tabla nueva, recorre la vieja
-	obtiene una posicion en la tabla nueva de la clave de la vieja
-	si esta ocupada hay colision
-	si el estado es vacio actualizo clave y dato*/
+	obtiene una posicion en la tabla nueva de la clave de la vieja*/
 
 	nodo_hash_t* ant_tabla = hash -> tabla; 
-	size_t tam_ant = hash -> capacidad; 
 
 	hash -> tabla = crear_tabla(nuevo_tam);
 	if(!hash->tabla){
@@ -123,17 +116,12 @@ bool redimencion(hash_t* hash, size_t nuevo_tam){
 	} 
 	hash -> capacidad = nuevo_tam; 
 
-	for(size_t i = 0; i < tam_ant; i++){ 
-
+	for(size_t i = 0; i < hash -> capacidad; i++){
 		if(ant_tabla[i].estado != OCUPADO) continue;
 
-		size_t posicion = hashing(nuevo_tam, ant_tabla[i].clave); 
-		if(hash -> tabla[posicion].estado == OCUPADO){ 
-			posicion = buscar_posicion(hash, ant_tabla[i].clave, posicion);
-			if(!posicion) return NULL;
-		}
-		asignar(hash ,posicion, ant_tabla[i].clave, ant_tabla[i].dato,OCUPADO);
-		hash -> cantidad ++;
+		size_t posicion = buscar_posicion(hash, ant_tabla[i].clave);
+		hash -> tabla[posicion].clave = ant_tabla[i].clave;
+		asignar(hash, posicion,ant_tabla[i].dato, OCUPADO);
 	}
 	free(ant_tabla);
 	return true;
@@ -171,9 +159,9 @@ bool hash_guardar(hash_t *hash, const char *clave, void *dato){
 		if(!estado_redimension) return false;
 	}
 
-	size_t posicion = hashing(hash -> capacidad, clave);
+	size_t posicion = buscar_posicion(hash, clave);
 	if(hash -> tabla[posicion].estado == OCUPADO){
-		destruir_dato(hash -> tabla[posicion].dato);
+		hash -> destruir_dato(hash -> tabla[posicion].dato);
 	}else{
 		hash -> tabla[posicion].clave = copiar_clave(clave);
 	}
@@ -185,17 +173,18 @@ bool hash_guardar(hash_t *hash, const char *clave, void *dato){
 
 
 void *hash_borrar(hash_t *hash, const char *clave){
-	size_t posicion = hashing(hash -> capacidad, clave);
 
 	if(hash -> cantidad == hash -> capacidad/REDUCE && hash -> cantidad / REDUCE > TAM_MIN){
 		bool estado_redimension = redimencion(hash, hash -> capacidad /REDUCE);
 		if(!estado_redimension) return NULL;
 	}
-	void* dato = hash_obtener(hash,clave);
-	posicion = buscar_posicion(hash,clave,posicion);
-	asignar(hash ,posicion, NULL, NULL,BORRADO);
+	size_t posicion = buscar_posicion(hash, clave);
+	if(hash -> tabla[posicion].estado != OCUPADO) return NULL;
+	void* valor = hash -> tabla[posicion].dato;
+	free(hash -> tabla[posicion].clave);
+	asignar(hash,posicion,NULL,BORRADO);
 	hash -> cantidad --;
-	return dato;
+	return valor;
 }
 
 
@@ -219,7 +208,16 @@ size_t hash_cantidad(const hash_t *hash){
 }
 
 
-//void hash_destruir(hash_t *hash);
+void hash_destruir(hash_t *hash){
+	for (int i = 0; i < hash ->capacidad; i++){
+		if(hash -> tabla[i].estado == OCUPADO){
+			hash -> destruir_dato(hash -> tabla[i].dato);
+		}
+		free(hash -> tabla[i].clave);
+	}
+	free(hash -> tabla);
+	free(hash);
+}
 
 /* *****************************************************************
  *                     PRIMITIVAS DEL ITERADOR
