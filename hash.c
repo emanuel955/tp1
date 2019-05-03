@@ -80,7 +80,7 @@ size_t buscar_posicion(const hash_t* hash, const char* clave){
 
 		posicion++;
 
-		if(posicion == (hash -> capacidad -1)) posicion = 0;
+		if(posicion == (hash -> capacidad)) posicion = 0;
 	}
 	return posicion;
 }
@@ -134,7 +134,6 @@ hash_t *hash_crear(hash_destruir_dato_t destruir_dato){
 	hash->cantidad = 0;
 	hash->capacidad = TAM_MIN;
 	hash->destruir_dato = destruir_dato;
-	printf("creo la tabla\n");
 	return hash;
 }
 
@@ -225,10 +224,10 @@ size_t posicionar_actual(const hash_t *hash, size_t posicion){
 	}
 
 	while(hash->tabla[posicion].estado != OCUPADO){	// Mientras que el estado del nodo actual de la tabla de Hash sea distinto de DATO.
-		if (posicion == hash->capacidad -1){			// Si la posicion es igual a la capacidad total de la tabla de Hash.
-			return hash->capacidad;
-		}
 		posicion++;
+		if (posicion == hash->capacidad){			// Si la posicion es igual a la capacidad total de la tabla de Hash.
+			return hash->capacidad;
+		}	
 	}
 	return posicion;
 }
