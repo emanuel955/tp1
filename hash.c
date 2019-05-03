@@ -63,7 +63,7 @@ nodo_hash_t* crear_tabla(size_t tamanio){
 	if (!tabla){
 		return NULL;
 	}
-	for(size_t i=0; i < TAM_MIN;i++){
+	for(size_t i=0; i < tamanio;i++){
 		tabla[i].clave = NULL;
 		tabla[i].dato = NULL;
 		tabla[i].estado = VACIO;
@@ -90,11 +90,12 @@ void asignar(hash_t* hash, size_t posicion,void* dato, estado_t estado){
 	hash -> tabla[posicion].estado = estado;
 }
 
-bool redimencion(hash_t* hash, size_t nuevo_tam){
+bool redimension(hash_t* hash, size_t nuevo_tam){
 	/* crea una tabla nueva, recorre la vieja
 	obtiene una posicion en la tabla nueva de la clave de la vieja*/
 
 	nodo_hash_t* ant_tabla = hash -> tabla; 
+	size_t capacidad_anterio = hash -> capacidad;
 
 	hash -> tabla = crear_tabla(nuevo_tam);
 	if(!hash->tabla){
@@ -103,7 +104,7 @@ bool redimencion(hash_t* hash, size_t nuevo_tam){
 	} 
 	hash -> capacidad = nuevo_tam; 
 
-	for(size_t i = 0; i < hash -> capacidad; i++){
+	for(size_t i = 0; i < capacidad_anterio; i++){
 		if(ant_tabla[i].estado != OCUPADO) continue;
 
 		size_t posicion = buscar_posicion(hash, ant_tabla[i].clave);
@@ -143,7 +144,7 @@ bool hash_guardar(hash_t *hash, const char *clave, void *dato){
 	
 	double factor_carga =(double)hash -> cantidad / (double)hash -> capacidad;
 	if(factor_carga >= CAP_MAX){
-		bool estado_redimension = redimencion(hash, hash -> capacidad * AUMENTA);
+		bool estado_redimension = redimension(hash, hash -> capacidad * AUMENTA);
 		if(!estado_redimension) return false;
 	}
 
@@ -166,7 +167,7 @@ void *hash_borrar(hash_t *hash, const char *clave){
 	if(!hash || !clave) return false;
 
 	if(hash -> cantidad == hash -> capacidad/REDUCE && hash -> cantidad / REDUCE > TAM_MIN){
-		bool estado_redimension = redimencion(hash, hash -> capacidad /REDUCE);
+		bool estado_redimension = redimension(hash, hash -> capacidad /REDUCE);
 		if(!estado_redimension) return NULL;
 	}
 	size_t posicion = buscar_posicion(hash, clave);
