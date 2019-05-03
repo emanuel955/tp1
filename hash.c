@@ -3,6 +3,7 @@
 #define PIVOTE2 63689
 
 #include <stdbool.h>
+#include<stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -52,7 +53,7 @@ size_t hashing(size_t capacidad, const char *clave){
   return hash % capacidad;
 }
 char* copiar_clave(const char* clave){
-	char* copia = malloc(sizeof(char));
+	char* copia = malloc(strlen(clave) + 1);
 	strcpy(copia,clave);
 	return copia;
 
@@ -79,7 +80,7 @@ size_t buscar_posicion(const hash_t* hash, const char* clave){
 
 		posicion++;
 
-		if(posicion == hash -> capacidad) posicion = 0;
+		if(posicion == (hash -> capacidad -1)) posicion = 0;
 	}
 	return posicion;
 }
@@ -132,14 +133,15 @@ hash_t *hash_crear(hash_destruir_dato_t destruir_dato){
 	hash->cantidad = 0;
 	hash->capacidad = TAM_MIN;
 	hash->destruir_dato = destruir_dato;
-
+	printf("creo la tabla\n");
 	return hash;
 }
 
 
 bool hash_guardar(hash_t *hash, const char *clave, void *dato){
+	if(!hash || !clave) return false;
 	
-	size_t factor_carga = hash -> cantidad / hash -> capacidad;
+	double factor_carga =(double)hash -> cantidad / (double)hash -> capacidad;
 	if(factor_carga >= CAP_MAX){
 		bool estado_redimension = redimencion(hash, hash -> capacidad * AUMENTA);
 		if(!estado_redimension) return false;
@@ -152,15 +154,16 @@ bool hash_guardar(hash_t *hash, const char *clave, void *dato){
 		}
 	}else{
 		hash -> tabla[posicion].clave = copiar_clave(clave);
+		hash -> cantidad ++;
 	}
 	asignar(hash, posicion, dato, OCUPADO);
-	hash -> cantidad ++;
 	return true;
 
 }
 
 
 void *hash_borrar(hash_t *hash, const char *clave){
+	if(!hash || !clave) return false;
 
 	if(hash -> cantidad == hash -> capacidad/REDUCE && hash -> cantidad / REDUCE > TAM_MIN){
 		bool estado_redimension = redimencion(hash, hash -> capacidad /REDUCE);
@@ -170,6 +173,7 @@ void *hash_borrar(hash_t *hash, const char *clave){
 	if(hash -> tabla[posicion].estado != OCUPADO) return NULL;
 	void* valor = hash -> tabla[posicion].dato;
 	free(hash -> tabla[posicion].clave);
+	hash -> tabla[posicion].clave = "";
 	asignar(hash,posicion,NULL,BORRADO);
 	hash -> cantidad --;
 	return valor;
@@ -202,8 +206,8 @@ void hash_destruir(hash_t *hash){
 			if(hash -> destruir_dato){
 				hash -> destruir_dato(hash -> tabla[i].dato);
 			}
+			free(hash -> tabla[i].clave);
 		}
-		free(hash -> tabla[i].clave);
 	}
 	free(hash -> tabla);
 	free(hash);
@@ -220,13 +224,11 @@ size_t posicionar_actual(const hash_t *hash, size_t posicion){
 	}
 
 	while(hash->tabla[posicion].estado != OCUPADO){	// Mientras que el estado del nodo actual de la tabla de Hash sea distinto de DATO.
-		
-		if (posicion == hash->capacidad){			// Si la posicion es igual a la capacidad total de la tabla de Hash.
+		if (posicion == hash->capacidad -1){			// Si la posicion es igual a la capacidad total de la tabla de Hash.
 			return hash->capacidad;
 		}
 		posicion++;
 	}
-
 	return posicion;
 }
 
@@ -235,6 +237,7 @@ size_t posicionar_actual(const hash_t *hash, size_t posicion){
  * *****************************************************************/
 
 hash_iter_t *hash_iter_crear(const hash_t *hash){
+	if(!hash) return NULL;
 	hash_iter_t* iter = malloc(sizeof(hash_iter_t));
 	if (!iter){
 		return NULL;
