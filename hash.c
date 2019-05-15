@@ -54,6 +54,7 @@ size_t hashing(size_t capacidad, const char *clave){
 }
 char* copiar_clave(const char* clave){
 	char* copia = malloc(strlen(clave) + 1);
+	if(!copia) return NULL;
 	strcpy(copia,clave);
 	return copia;
 
@@ -78,9 +79,11 @@ size_t buscar_posicion(const hash_t* hash, const char* clave){
 
 		if(strcmp(hash -> tabla[posicion].clave, clave) == 0) return posicion;
 
-		posicion++;
+		//posicion++;
 
-		if(posicion == (hash -> capacidad)) posicion = 0;
+		//if(posicion == (hash -> capacidad)) posicion = 0;
+
+		posicion = (posicion + 1) % hash -> capacidad;
 	}
 	return posicion;
 }
@@ -166,8 +169,7 @@ void *hash_borrar(hash_t *hash, const char *clave){
 	if(!hash || !clave) return false;
 
 	if(hash -> cantidad == hash -> capacidad/REDUCE && hash -> cantidad / REDUCE > TAM_MIN){
-		bool estado_redimension = redimension(hash, hash -> capacidad /REDUCE);
-		if(!estado_redimension) return NULL;
+		redimension(hash, hash -> capacidad /REDUCE);
 	}
 	size_t posicion = buscar_posicion(hash, clave);
 	if(hash -> tabla[posicion].estado != OCUPADO) return NULL;
@@ -181,8 +183,8 @@ void *hash_borrar(hash_t *hash, const char *clave){
 
 
 void *hash_obtener(const hash_t *hash, const char *clave){
-	if(!hash_pertenece(hash, clave)) return NULL;
 	size_t posicion = buscar_posicion(hash, clave);
+	if(hash -> tabla[posicion].estado == VACIO) return NULL;
 	return hash -> tabla[posicion].dato;
 }
 
